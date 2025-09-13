@@ -9,7 +9,7 @@ class CalculatorScreen extends StatefulWidget {
 }
 
 class _CalculatorScreenState extends State<CalculatorScreen> {
-  String number1 = "";
+  String number1 = "0";
   String operand = "";
   String number2 = "";
 
@@ -17,7 +17,44 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
     return Scaffold(
+      appBar: AppBar(
+        iconTheme: const IconThemeData(color: Colors.white, size: 32),
+        leading: PopupMenuButton<String>(
+          icon: const Icon(Icons.view_headline),
+          onSelected: (value) {
+            // Handle menu item selection
+          },
+          itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+            const PopupMenuItem<String>(value: 'Basic', child: Row(
+              children: [
+                Icon(Icons.calculate),
+                SizedBox(width: 12),
+                Text('Basic'),
+              ],
+            )),
+            const PopupMenuItem<String>(value: 'Scientific', child: Row(
+              children: [
+                Icon(Icons.functions),
+                SizedBox(width: 12),
+                Text('Scientific'),
+              ],
+            )),
+            const PopupMenuItem<String>(value: 'Conversion', child: Row(
+              children: [
+                Icon(Icons.swap_horiz),
+                SizedBox(width: 12),
+                Text('Conversion'),
+              ],
+            )),
+          ],
+        ),
+        actions: [
+          IconButton(onPressed: () {}, icon: const Icon(Icons.history)),
+          SizedBox(width: 6),
+        ],
+      ),
       body: SafeArea(
+        minimum: EdgeInsets.fromLTRB(0, 5, 0, 25),
         bottom: false,
         child: Column(
           children: [
@@ -35,7 +72,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                     style: TextStyle(
                       fontSize: 48,
                       fontWeight: FontWeight.bold,
-                      color: Color.fromRGBO(255, 255, 255, 90)
+                      color: Color.fromRGBO(255, 255, 255, 90),
                     ),
                     textAlign: TextAlign.end,
                   ),
@@ -86,9 +123,10 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   }
 
   Color getBtnColor(String value) {
-    return [Btn.del, Btn.clr].contains(value)
+    return [Btn.clr].contains(value)
         ? Colors.blueGrey
         : [
+            Btn.changeSign,
             Btn.per,
             Btn.multiply,
             Btn.add,
@@ -96,13 +134,31 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
             Btn.divide,
             Btn.calculate,
           ].contains(value)
-        ? Colors.orange
+        ? Colors.orangeAccent
         : Colors.black87;
   }
 
+  TextStyle getBtnTextStyle(String value) {
+    return TextStyle(
+      fontSize: [Btn.clr].contains(value)
+          ? 48
+          : [
+              Btn.changeSign,
+              Btn.per,
+              Btn.multiply,
+              Btn.add,
+              Btn.subtract,
+              Btn.divide,
+              Btn.calculate,
+            ].contains(value)
+          ? 48
+          : 24,
+    );
+  }
+
   void onBtnTap(String value) {
-    if (value == Btn.del) {
-      delete();
+    if (value == Btn.changeSign) {
+      changeSign();
       return;
     }
 
@@ -118,6 +174,14 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
 
     if (value == Btn.calculate) {
       calculate();
+      return;
+    }
+
+    // Replace "0" with first digit pressed
+    if (number1 == "0" && RegExp(r'^\d$').hasMatch(value)) {
+      setState(() {
+        number1 = value;
+      });
       return;
     }
 
@@ -181,21 +245,35 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
 
   void clearAll() {
     setState(() {
-      number1 = "";
+      number1 = "0";
       operand = "";
       number2 = "";
     });
   }
 
-  void delete() {
-    if (number2.isNotEmpty) {
-      number2 = number2.substring(0, number2.length - 1);
-    } else if (operand.isNotEmpty) {
-      operand = "";
-    } else if (number1.isNotEmpty) {
-      number1 = number1.substring(0, number1.length - 1);
+  void changeSign() {
+    if (number1.isNotEmpty && operand.isEmpty && number2.isEmpty) {
+      final number = double.parse(number1);
+      final changed = number * (-1);
+      setState(() {
+        if (changed % 1 == 0) {
+          number1 = changed.toInt().toString();
+        } else {
+          number1 = changed.toString();
+        }
+      });
     }
-    setState(() {});
+    if (number1.isNotEmpty && operand.isNotEmpty && number2.isNotEmpty) {
+      final number = double.parse(number2);
+      final changed = number * (-1);
+      setState(() {
+        if (changed % 1 == 0) {
+          number2 = changed.toInt().toString();
+        } else {
+          number2 = changed.toString();
+        }
+      });
+    }
   }
 
   void appendValue(String value) {
