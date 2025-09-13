@@ -1,3 +1,5 @@
+import 'package:calculator_app/src/history_storage.dart';
+
 import 'button_values.dart';
 import 'package:flutter/material.dart';
 
@@ -8,10 +10,29 @@ class CalculatorScreen extends StatefulWidget {
   State<CalculatorScreen> createState() => _CalculatorScreenState();
 }
 
-class _CalculatorScreenState extends State<CalculatorScreen> {
+class _CalculatorScreenState extends State<CalculatorScreen> with WidgetsBindingObserver {
   String number1 = "0";
   String operand = "";
   String number2 = "";
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.detached || state == AppLifecycleState.inactive) {
+      history.clear();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +70,9 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
           ],
         ),
         actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.history)),
+          IconButton(onPressed: () {
+            Navigator.pushNamed(context, '/history');
+          }, icon: const Icon(Icons.history)),
           SizedBox(width: 6),
         ],
       ),
@@ -138,24 +161,6 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         : Colors.black87;
   }
 
-  TextStyle getBtnTextStyle(String value) {
-    return TextStyle(
-      fontSize: [Btn.clr].contains(value)
-          ? 48
-          : [
-              Btn.changeSign,
-              Btn.per,
-              Btn.multiply,
-              Btn.add,
-              Btn.subtract,
-              Btn.divide,
-              Btn.calculate,
-            ].contains(value)
-          ? 48
-          : 24,
-    );
-  }
-
   void onBtnTap(String value) {
     if (value == Btn.changeSign) {
       changeSign();
@@ -177,8 +182,8 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       return;
     }
 
-    // Replace "0" with first digit pressed
-    if (number1 == "0" && RegExp(r'^\d$').hasMatch(value)) {
+    // Only replace "0" with digit if not an operator
+    if (number1 == "0" && RegExp(r'^\d$').hasMatch(value) && operand.isEmpty) {
       setState(() {
         number1 = value;
       });
@@ -194,6 +199,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     final double num1 = double.parse(number1);
     final double num2 = double.parse(number2);
     var result = 0.0;
+    String usedOperand = operand; // Save operand before clearing
 
     switch (operand) {
       case Btn.add:
@@ -212,17 +218,14 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     }
 
     setState(() {
-      //number1 = result.toStringAsPrecision(3);
       if (result % 1 == 0) {
         number1 = result.toInt().toString();
       } else {
         number1 = result.toString();
       }
-      // if (number1.endsWith(".0")) {
-      //   number1 = number1.substring(0, number1.length - 2);
-      // }
       operand = "";
       number2 = "";
+      history.add("$num1 $usedOperand $num2 = $number1");
     });
   }
 

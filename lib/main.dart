@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:calculator_app/src/history_screen.dart';
 import 'package:window_size/window_size.dart';
 import 'package:flutter/material.dart';
 import 'package:calculator_app/src/calculator_screen.dart';
@@ -24,7 +25,10 @@ class Calculator extends StatelessWidget {
       title: 'Calculator',
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark(),
-      home: const CalculatorScreen(),
+      routes: {
+        '/': (context) => const CalculatorScreen(),
+        '/history': (context) => const HistoryScreen(),
+      },
     );
   }
 }
